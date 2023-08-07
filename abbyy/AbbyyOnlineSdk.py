@@ -43,12 +43,12 @@ class AbbyyOnlineSdk:
             "exportFormat": settings.OutputFormat
         })
         requestUrl = self.ServerUrl + "processImage?" + urlParams
-
+        headers = self.buildAuthHeader()
         with open(filePath, "rb") as file:
-            files = {"file": (os.path.basename(filePath), file)}
-            headers = self.buildAuthHeader()
+            files = {"file": (os.path.basename(filePath), file)}  
             response = requests.post(requestUrl, files=files, headers=headers)
 
+        
         if response.status_code != 200 or response.text.find('<Error>') != -1:
             return None
 
@@ -61,7 +61,6 @@ class AbbyyOnlineSdk:
         statusUrl = self.ServerUrl + "getTaskStatus?" + urlParams
         headers = self.buildAuthHeader()
         response = requests.get(statusUrl, headers=headers)
-
         task = self.DecodeResponse(response.text)
         return task
 
@@ -70,9 +69,7 @@ class AbbyyOnlineSdk:
         if getResultUrl is None:
             print("No download URL found")
             return
-
-        headers = self.buildAuthHeader()
-        response = requests.get(getResultUrl, headers=headers)
+        response = requests.get(getResultUrl)
         with open(outputPath, "wb") as resultFile:
             resultFile.write(response.content)
 
@@ -88,8 +85,7 @@ class AbbyyOnlineSdk:
         return task
 
     def buildAuthHeader(self):
-        authString = "%s:%s" % (self.ApplicationId, self.Password)
-        authBytes = authString.encode('utf-8')
-        authBase64 = base64.b64encode(authBytes)
-        return {"Authorization": "Basic %s" % authBase64.decode('utf-8')}
+        to_encode = f"{self.ApplicationId}:{self.Password}"
+        base_encoded = base64.b64encode(to_encode.encode("iso-8859-1")).decode("utf-8")
+        return {"Authorization": f"Basic {base_encoded}"}
 
